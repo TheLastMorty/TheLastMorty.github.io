@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车贷款计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 90%;
+            margin: auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+      <h1>汽车贷款计算器</h1>
+      <form id="loanCalculator">
+          <label for="guidePrice">指导车价:</label>
+          <input type="number" id="guidePrice" min="0" step="any" required>
+
+          <label for="loanAmount">贷款金额:</label>
+          <input type="number" id="loanAmount" placeholder="请输入贷款金额">
+
+          <label for="loanPeriod">贷款期数(月):</label>
+          <select id="loanPeriod">
+              <!-- 生成从12到120期的选项，这段代码将在最终HTML中用JavaScript动态生成 -->
+          </select>
+
+          <label for="monthlyPayment">月供:</label>
+          <input type="number" id="monthlyPayment" placeholder="请输入月供">
+
+          <label for="cashDiscount">现金优惠金额:</label>
+          <input type="number" id="cashDiscount" placeholder="请输入现金优惠金额">
+
+          <label for="returnInterest">返还利息:</label>
+          <input type="number" id="returnInterest" placeholder="请输入返还利息">
+
+          <button type="submit">计算</button>
+      </form>
+
+      <!-- 新增的结果显示区域 -->
+      <div id="results">
+          <p>月利率: <span id="monthlyInterestRate"></span></p>
+          <p>每月偿还的利息: <span id="monthlyInterest"></span></p>
+          <p>每月偿还的本金: <span id="monthlyPrincipal"></span></p>
+          <p>总还款金额: <span id="totalRepayment"></span></p>
+          <!-- <p>总支付的利息: <span id="totalInterestPaid"></span></p> -->
+      </div>
+
+      <table id="repaymentTable">
+        <thead>
+            <tr>
+                <th>还款期数</th>
+                <th>支付利息</th>
+                <th>最终车价</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 表格行将在JavaScript中动态生成 -->
+        </tbody>
+    </table>
+  </div>
+
+  <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          let select = document.getElementById('loanPeriod');
+          for (let i = 12; i <= 120; i += 12) {
+              let option = document.createElement('option');
+              option.value = i;
+              option.textContent = i.toString();
+              select.appendChild(option);
+          }
+
+          const form = document.getElementById('loanCalculator');
+          form.addEventListener('submit', function(event) {
+              event.preventDefault();
+
+              // 获取用户输入
+              let loanAmount = parseFloat(document.getElementById('loanAmount').value);
+              let monthlyPayment = parseFloat(document.getElementById('monthlyPayment').value);
+              let loanPeriod = parseInt(document.getElementById('loanPeriod').value);
+              let cashDiscount = parseFloat(document.getElementById('cashDiscount').value);
+              let guidePrice = parseFloat(document.getElementById('guidePrice').value);
+              let returnInterest = parseFloat(document.getElementById('returnInterest').value);
+
+              // 计算总还款金额
+              let totalRepayment = monthlyPayment * loanPeriod;
+
+              // 计算月利息
+              let monthlyInterest = (totalRepayment-loanAmount)/loanPeriod;
+
+              // 计算月利率
+              let monthlyInterestRate=(totalRepayment-loanAmount)/loanAmount/loanPeriod;
+
+
+
+              // 计算总支付的利息
+              // let totalInterestPaid = totalRepayment - (loanAmount - cashDiscount);
+
+              // 显示结果
+              document.getElementById('monthlyInterestRate').textContent = `${(monthlyInterestRate*100).toFixed(8)}%`;
+              document.getElementById('monthlyInterest').textContent =  `${monthlyInterest.toFixed(2)}`;
+              document.getElementById('monthlyPrincipal').textContent = `${(monthlyPayment-monthlyInterest).toFixed(2)}`;
+              document.getElementById('totalRepayment').textContent = totalRepayment.toFixed(2);
+              // document.getElementById('totalInterestPaid').textContent = totalInterestPaid.toFixed(2);
+
+
+              const tableBody = document.querySelector('#repaymentTable tbody');
+              let results = [];
+              for (let index = 24; index <= loanPeriod; index+=4) {
+                let paid=index*monthlyPayment;
+                let paidIntest=index*monthlyInterest;
+                let paidCapital=index*(monthlyPayment-monthlyInterest);
+                let remainingCapital=loanAmount-paidCapital;
+                let ultimatePrice=(guidePrice-loanAmount)+paid+remainingCapital-returnInterest-cashDiscount;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index}</td>
+                    <td>${paidIntest.toFixed(2)}</td>
+                    <td>${ultimatePrice.toFixed(2)}</td>
+                `;
+                tableBody.appendChild(row);
+                
+              }
+          });
+      });
+  </script>
+</body>
+</html>
